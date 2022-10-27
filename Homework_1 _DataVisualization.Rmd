@@ -1,0 +1,252 @@
+---
+title: "Narine Marutyan HW 1"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(reticulate)
+library(plot2)
+library(themes)
+library(lattice)
+library(dplyr)
+library(reshape2)
+
+# ------------------------------------------------------------------
+# Task 2
+# ------------------------------------------------------------------
+# Read the data and check the structure. Convert Type to factor. 
+# Check if there are any missing values.
+
+wine <- read.csv('wine.csv')
+str(wine)
+sum(is.na(wine))
+
+# ------------------------------------------------------------------
+# Task 2.1
+# ------------------------------------------------------------------
+# Select all numeric variables from your data. Calculate correlation 
+# between variables and create correlation heatmap.
+  
+only_numeric <- select_if(wine, is.numeric)
+c <- round(cor(only_numeric),2)
+melted_c <- reshape2::melt(c)
+plot(data = melted_c,aes(x=Var1,y=Var2,fill=value)) + geom_tile()
+# From the picture it is apparent that the lighter the shade 
+# the higher the correlation coefficent (but let`s not take 
+# 1 since only same things are correlated that much) . It is 
+# quite apparent that flavanoids and Phenols are very much
+# positively correlated
+
+# ------------------------------------------------------------------
+# Task 2.2
+# ------------------------------------------------------------------
+# Using correlation matrix from task 1 extract two highly correlated 
+# variables. Create scatter plot of that two variables. Use type as 
+# color parameter. Define following colors for your graph: 
+# #248745, #874724, #000000. Use theme bw. Add appropriate title.
+
+High <- 0.865
+Typec <- as.character(wine$Type)
+
+plot(data = wine, aes(x = Flavanoids, y = Phenols, color = Typec)) +
+geom_point() +
+scale_color_manual(values = c('#248745', '#874724', '#000000')) +
+theme_bw() +
+title('Scatterplot of Flavanoids and OD with "Type" as color') +
+labs(color='Type') 
+
+# ------------------------------------------------------------------
+# Task 2.3
+# ------------------------------------------------------------------
+# Using visualization techniques check if there is distributional 
+# difference between alcohol and type of wine. Use theme_classic 
+# for your graph(s). Using alpha add some transparency. Comment 
+# on your findings.
+
+dist_diff <- plot(data = wine, aes(x = Type, y = Alcohol, color = Typec, alpha = 125)) + geom_point() + theme_classic()
+dist_diff 
+# it is apparent that Type 1 has the highest alcohol percentage, 
+# whereas Type 2 has the lowest and perhaps it has the widest 
+# range of percentages. Type 3, on the other hand, is somewhere
+# between Type 1 and Type 2
+
+wine_type1 <- subset(wine, Type == 1)
+wine_type2 <- subset(wine, Type == 2)
+wine_type3 <- subset(wine, Type == 3)
+first <-plot(wine_type1, aes(x = Alcohol)) + geom_density() + xlab('density(type 1)')
+second <- plot(wine_type2, aes(x = Alcohol)) + geom_density() + xlab('density(type 2)')
+third <- plot(wine_type3, aes(x = Alcohol)) + geom_density() + xlab('density(type 3)')
+gridExtra::grid.arrange(
+  first,
+  second,
+  third,
+  ncol = 3,
+  nrow = 1
+)
+# here are my density plots which show some insights about distributions
+# type 3 has two peaks, whereas type 1 and type 2 have single peak points
+# also they are all a little right skewed and look kind of like bell 
+# shaped distribution
+
+# ------------------------------------------------------------------
+# Task 2.4
+# ------------------------------------------------------------------
+# Reproduce
+footnote <- paste0('Correlation between Alcohol and Proline is ', round(cor(wine$Proline, wine$Alcohol), 2))
+
+corr_proalc <- plot(data = wine, aes(x = Alcohol, y = Proline, color = Typec)) + 
+geom_point() + geom_smooth(method = 'lm', alpha = 0) + xlab('Alcohol level') + title('Relationship between alcohol level and proline') + 
+scale_x_continuous(breaks = seq(11, 15, 0.5)) + 
+scale_color_manual(values = c('#EE6A50', '#008B00', '#009ACD')) + 
+theme_economist() + labs(color='Type', caption = footnote)
+
+corr_proalc
+
+# ------------------------------------------------------------------
+# BONUS
+# ------------------------------------------------------------------
+plot(data = wine, aes(x = Ash, y = Acl, color = Color)) +
+  geom_point() +
+  labs(title = "Ash vc Alcalinity of ash") +
+  theme(panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_blank()) +
+  facet_wrap(~Type, scales = 'free_y') + 
+  geom_hline(yintercept = mean(wine$Acl), color="red") +
+  geom_vline(xintercept = median(wine$Ash), color="red")
+
+```
+
+
+
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import pandas as pd
+import seaborn as sns
+```
+
+```{python}
+# ------------------------------------------------------------------
+# Task 3
+# ------------------------------------------------------------------
+# Read the data and check if there are any missing values. Convert
+# all object variables to categorical.
+
+df = pd.read_csv('gpafactors_2.csv')
+df.isnull().values.any()
+df['gender'] = df.gender.astype('category')
+df['job'] = df.job.astype('category')
+df['type'] = df.type.astype('category')
+df = df.rename(columns={'marital.status': 'marital'})
+df['marital.status'] = df.marital.astype('category')
+df['imp'] = df.imp.astype('category')
+
+# ------------------------------------------------------------------
+# Task 3.1
+# ------------------------------------------------------------------
+# Create histograms with binary variables vs grade point average of
+# students. Use your own colors for each graph with appropriate title.
+
+plt.close()
+plt.subplot(2,2,1)
+sns.histplot(data = df, x = 'gpa', hue = 'gender', palette = 'muted')
+plt.title('gender vs gpa histogram')
+plt.ylabel('Frequency')
+
+plt.subplot(2,2,2)
+sns.histplot(data = df, x = 'gpa', hue = 'job', palette = 'bright')
+plt.title('job vs gpa histogram')
+plt.ylabel('Frequency')
+
+plt.subplot(2,1,2)
+sns.histplot(data = df, x = 'gpa', hue = 'type', palette = 'deep')
+plt.title('type vs gpa histogram')
+plt.ylabel('Frequency')
+plt.show()
+
+# ------------------------------------------------------------------
+# Task 3.2
+# ------------------------------------------------------------------
+# Using np.unique() and list() functions extract unique values of 
+# gender and job columns. Visualize relationship between age and 
+# gpa for each possible combination (create subplots). Set 
+# different colors and approrpiate titles for each subplot.
+a = np.unique(df['gender']).tolist()
+b = np.unique(df['job']).tolist()
+list = [(x,y) for x in a for y in b]
+list
+
+plt.close()
+df1 = df.loc[(df.gender == list[0][0]) & (df.job == list[0][1])]
+plt.subplot(2,2,1)
+plt.scatter(data = df1, x = 'age', y = 'gpa', c = 'mediumvioletred')
+plt.title('age~gender for employed female')
+
+df2 = df.loc[(df.gender == list[1][0]) & (df.job == list[1][1])]
+plt.subplot(2,2,2)
+plt.scatter(data = df2, x = 'age', y = 'gpa', c = 'hotpink')
+plt.title('age~gender for unemployed female')
+
+df3 = df.loc[(df.gender == list[2][0]) & (df.job == list[2][1])]
+plt.subplot(2,2,3)
+plt.scatter(data = df3, x = 'age', y = 'gpa', c = 'slateblue')
+plt.title('age~gender for employed male')
+
+df4 = df.loc[(df.gender == list[3][0]) & (df.job == list[3][1])]
+plt.subplot(2,2,4)
+plt.scatter(data = df4, x = 'age', y = 'gpa', c = 'lightsteelblue')
+plt.title('age~gender for unemployed male')
+plt.show()
+
+# ------------------------------------------------------------------
+# Task 3.3
+# ------------------------------------------------------------------
+# Reproduce
+
+plt.close()
+sns.scatterplot(x = 'hsleep', y = 'gpa', data=df, hue = 'gender', palette = 'cubehelix', style = 'job') 
+plt.title('Relationship between hours of sleep and gpa splitted by gender and job')
+plt.xlabel('Sleep Hours')
+plt.ylabel('GPA')
+plt.show()
+
+# ------------------------------------------------------------------
+# Task 3.4
+# ------------------------------------------------------------------
+# Create correlation heatmap and show correlation values on the 
+# graph. Comment on the results.
+
+plt.close()
+sns.heatmap(df.corr(), annot = True)
+plt.show()
+
+# with the values on it, it is clearly visible that the most 
+# positively correlated pair is gpa~hsleep. The most 
+# negatively correlated pair is hsleep~hpw. There are some pairs
+# that are almost not correlated like ehpw~age and etc.
+
+# ------------------------------------------------------------------
+# Task 3.5
+# ------------------------------------------------------------------
+# look at my 3.3 graph there are almost NO women from 20-43 
+# who are not employed. That`s so weird.
+```
+
+# ------------------------------------------------------------------
+# Task 4
+# ------------------------------------------------------------------
+# https://www.youtube.com/watch?v=1FZ7DbQwVcw
+# https://www.youtube.com/watch?v=o_1aF54DO60
+
